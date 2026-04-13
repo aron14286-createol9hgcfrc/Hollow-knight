@@ -152,17 +152,50 @@
             var buildUrl = "Build";
             var loaderUrl = buildUrl + "/hktruffled.loader.js";
             var config = {
-                 dataUrl: dataUrl,
-    frameworkUrl: buildUrl + "/hktruffled.framework.js",
-    codeUrl: wasmurl,
-    streamingAssetsUrl: "StreamingAssets",
-    companyName: "Team Cherry & Truffled",
-    productName: "Hollow Knight",
-    productVersion: "1.1",
-    // MEMORY FIX - Prevents white screen crash
-    totalMemory: 1024 * 16 * 1024 * 1024,  // 16GB total heap
-    memorySize: 512 * 1024 * 1024,         // 512MB initial RAM
-    stackSize: 10 * 1024 * 1024,           // 10MB stack buffer
+                 // 🔥 ALL 3 DREAMERS FIX - Monomon + Lurien + Herrah (White screen crash protection)
+config.preRun = config.preRun || [];
+config.preRun.push(function() {
+    if (typeof Module !== 'undefined') {
+        // Universal Dreamer skipper
+        Module['dreamSkip'] = function() {
+            if (typeof EndMovie !== 'undefined') EndMovie();
+            if (typeof SkipCutscene !== 'undefined') SkipCutscene();
+            // Force scene advance
+            if (typeof jQuery !== 'undefined') jQuery('#dreamnail').trigger('skip');
+        };
+        
+        // Dreamer-specific memory preloads (256MB each)
+        const dreamers = ['monomon', 'lurien', 'herrah'];
+        dreamers.forEach(dreamer => {
+            if (Module['FS']) {
+                Module.FS.createDataFile('/StreamingAssets/' + dreamer, dreamer + '_preload.dat', 
+                    new ArrayBuffer(268435456), true, true);
+            }
+        });
+        
+        // Aggressive white screen killer
+        let whiteTimer = 0;
+        const canvas = document.querySelector('#unity-canvas');
+        const checkWhite = () => {
+            whiteTimer++;
+            if (canvas && canvas.style.backgroundColor.includes('white') && whiteTimer > 60) {
+                Module.dreamSkip();
+                whiteTimer = 0;
+            }
+            requestAnimationFrame(checkWhite);
+        };
+        checkWhite();
+        
+        // DOM mutation observer for dreamer triggers
+        const observer = new MutationObserver(() => {
+            if (document.body.innerHTML.includes('Dreamer') || 
+                canvas.style.backgroundImage.includes('fog')) {
+                setTimeout(Module.dreamSkip, 500);
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+});
             };
 
             // 🔥 FULL CUTSCENE SKIP - SKIPS ALL DREAMERS, BOSSES, CREDITS
