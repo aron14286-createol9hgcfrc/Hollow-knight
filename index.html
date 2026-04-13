@@ -151,20 +151,21 @@
 
             var buildUrl = "Build";
             var loaderUrl = buildUrl + "/hktruffled.loader.js";
-            var config = {
-                 // 🔥 ALL 3 DREAMERS FIX - Monomon + Lurien + Herrah (White screen crash protection)
+       var config = {
+    dataUrl: dataUrl,
+    // ... other stuff ...
+    memorySize: 512 * 1024 * 1024
+};  // ← AFTER this closing brace
+
+// 🔥 PASTE HERE - OUTSIDE config
 config.preRun = config.preRun || [];
 config.preRun.push(function() {
     if (typeof Module !== 'undefined') {
-        // Universal Dreamer skipper
         Module['dreamSkip'] = function() {
             if (typeof EndMovie !== 'undefined') EndMovie();
             if (typeof SkipCutscene !== 'undefined') SkipCutscene();
-            // Force scene advance
-            if (typeof jQuery !== 'undefined') jQuery('#dreamnail').trigger('skip');
         };
         
-        // Dreamer-specific memory preloads (256MB each)
         const dreamers = ['monomon', 'lurien', 'herrah'];
         dreamers.forEach(dreamer => {
             if (Module['FS']) {
@@ -172,6 +173,20 @@ config.preRun.push(function() {
                     new ArrayBuffer(268435456), true, true);
             }
         });
+        
+        let whiteTimer = 0;
+        const canvas = document.querySelector('#unity-canvas');
+        const checkWhite = () => {
+            whiteTimer++;
+            if (canvas && canvas.style.backgroundColor.includes('white') && whiteTimer > 60) {
+                Module.dreamSkip();
+                whiteTimer = 0;
+            }
+            requestAnimationFrame(checkWhite);
+        };
+        checkWhite();
+    }
+});
         
         // Aggressive white screen killer
         let whiteTimer = 0;
